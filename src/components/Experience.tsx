@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { FiBookOpen, FiBriefcase, FiMapPin } from 'react-icons/fi'
 import { useContent } from '../data/ContentContext'
+import { AddButton, EditButton } from './EditControls'
 import { SectionHeading } from './SectionHeading'
 
 export function Experience() {
@@ -51,6 +52,7 @@ export function Experience() {
                     className="reveal spot rounded-3xl border border-line bg-card p-6 transition-transform duration-500 ease-out-expo hover:-translate-y-1 md:p-8"
                     style={{ '--d': `${i * 120}ms` } as React.CSSProperties}
                   >
+                    <EditButton path={['experience', i]} className="-top-3 right-5" />
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <span className="font-mono text-xs tracking-wider text-accent">{item.period}</span>
                       {item.current && (
@@ -81,6 +83,7 @@ export function Experience() {
               )
             })}
           </ol>
+          <AddButton listPath={['experience']} label="Add experience / education" className="mt-10 ml-16 w-[calc(100%-4rem)]" />
         </div>
       </div>
     </section>

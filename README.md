@@ -16,9 +16,9 @@ npm run dev
 Open the live site with **`?studio`** at the end, e.g. `https://zaindrex.github.io/Portfolio/?studio`.
 
 1. Paste a GitHub fine-grained token (only this repo, **Contents: Read and write**, 90-day expiry). It is kept in your browser only.
-2. Edit any section. The page behind the panel updates live as you type.
+2. Every section, project, experience entry and skill group now shows an **Edit** button. Click one to open a card with just its fields; the page updates live as you type. **＋ Add** buttons appear where new projects, entries and skill groups go. Esc closes the card.
 3. Upload images or the resume with the **Upload** buttons (they go to `public/uploads/`).
-4. Hit **Publish**. The studio commits `src/data/content.json`, the GitHub Action rebuilds, and the site is live in about a minute.
+4. Hit **Publish** in the bar at the bottom. The studio commits `src/data/content.json`, the GitHub Action rebuilds, and the site is live in about a minute.
 
 Unpublished changes are autosaved as a draft on that device. If the file changed elsewhere since you opened the studio, publishing stops and asks whether to load the latest or overwrite.
 

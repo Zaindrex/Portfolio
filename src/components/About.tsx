@@ -1,5 +1,6 @@
 import { FiBriefcase, FiMail, FiMapPin, FiUser } from 'react-icons/fi'
 import { useContent } from '../data/ContentContext'
+import { EditButton } from './EditControls'
 import { SectionHeading } from './SectionHeading'
 
 export function About() {
@@ -16,6 +17,7 @@ export function About() {
 
   return (
     <section id="about" className="relative border-t border-line/60 py-24 md:py-32">
+      <EditButton path={['about']} label="Edit about" className="top-6 right-5 md:right-8" />
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <SectionHeading eyebrow="About me" title={<>{headStart} <span className="text-accent">{headLast}</span></>} />
 

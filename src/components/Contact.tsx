@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { FiArrowUpRight, FiCheckCircle, FiGithub, FiLinkedin, FiMail, FiMapPin, FiSend } from 'react-icons/fi'
 import { SiHackerrank, SiLeetcode } from 'react-icons/si'
 import { useContent } from '../data/ContentContext'
+import { EditButton } from './EditControls'
 import { SectionHeading } from './SectionHeading'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
@@ -50,6 +51,7 @@ export function Contact() {
 
   return (
     <section id="contact" className="relative overflow-hidden border-t border-line/60 py-24 md:py-32">
+      <EditButton path={['contact']} label="Edit contact form" className="top-6 right-5 md:right-8" />
       <div className="absolute bottom-0 left-1/2 -z-10 h-[400px] w-[800px] -translate-x-1/2 translate-y-1/2 rounded-full bg-accent/10 blur-[140px]" />
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <SectionHeading eyebrow="Get in touch" title={<>Let’s build something <span className="text-accent">together</span></>} />

@@ -1,24 +1,31 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { FiAlertTriangle, FiCheckCircle, FiDownload, FiEdit3, FiExternalLink, FiKey, FiLogOut, FiMinimize2, FiRotateCcw, FiSend } from 'react-icons/fi'
+import {
+  FiAlertTriangle,
+  FiArrowDown,
+  FiArrowUp,
+  FiCheckCircle,
+  FiDownload,
+  FiEdit3,
+  FiExternalLink,
+  FiKey,
+  FiLogOut,
+  FiRotateCcw,
+  FiSend,
+  FiTrash2,
+  FiX,
+} from 'react-icons/fi'
 import { defaultContent, type Content } from '../data/content'
-import { useContentStore } from '../data/ContentContext'
+import { useContentStore, type ContentPath } from '../data/ContentContext'
 import { repoUrl, STUDIO_CONFIG } from './config'
-import { Field, inputCls, labelFor, UploadContext } from './Fields'
+import { Field, labelFor, newItem, singular, summaryOf, UploadContext, inputCls } from './Fields'
 import { currentContentSha, GitHubError, isConflict, readContentFile, uploadImage, verifyToken, writeContentFile } from './github'
+
+// The studio runs on top of the live page: once you're logged in, every section
+// gets an Edit button (see components/EditControls.tsx). Clicking one opens a
+// card here with just that item's fields, and a floating bar handles publishing.
 
 const TOKEN_KEY = 'studio.token'
 const DRAFT_KEY = 'studio.draft'
-
-// Which section each tab scrolls the page to, so you see what you're editing.
-const SECTION_FOR: Record<string, string> = {
-  profile: 'top',
-  about: 'about',
-  skills: 'skills',
-  marquee: 'skills',
-  projects: 'projects',
-  experience: 'experience',
-  contact: 'contact',
-}
 
 const store = {
   get: (k: string) => {
@@ -47,36 +54,64 @@ const store = {
 
 const serialize = (c: Content) => JSON.stringify(c, null, 2) + '\n'
 
+// ── immutable path helpers ──────────────────────────────────
+
+function getIn(obj: unknown, path: ContentPath): unknown {
+  return path.reduce<unknown>((acc, k) => (acc == null ? undefined : (acc as Record<string | number, unknown>)[k]), obj)
+}
+
+function setIn(obj: unknown, path: ContentPath, value: unknown): unknown {
+  if (!path.length) return value
+  const [k, ...rest] = path
+  if (Array.isArray(obj)) {
+    const copy = obj.slice()
+    copy[k as number] = setIn(obj[k as number], rest, value)
+    return copy
+  }
+  const rec = obj as Record<string, unknown>
+  return { ...rec, [k]: setIn(rec[k as string], rest, value) }
+}
+
+function changedSections(before: string, after: string) {
+  const a = JSON.parse(before) as Record<string, unknown>
+  const b = JSON.parse(after) as Record<string, unknown>
+  return Object.keys(b).filter((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]))
+}
+
 type Phase = 'login' | 'loading' | 'ready'
 type Notice = { kind: 'ok' | 'err' | 'info'; text: string; link?: { href: string; label: string } } | null
 
+const exitStudio = () => {
+  const url = new URL(window.location.href)
+  url.searchParams.delete('studio')
+  window.location.href = url.toString()
+}
+
 export default function Studio() {
-  const { content, setContent, setPreview } = useContentStore()
+  const { content, setContent, setPreview, setEditor } = useContentStore()
   const [token, setToken] = useState(() => store.get(TOKEN_KEY) ?? '')
   const [phase, setPhase] = useState<Phase>(token ? 'loading' : 'login')
-  const [repoName, setRepoName] = useState('')
   const [baseSha, setBaseSha] = useState('')
   const [published, setPublished] = useState(() => serialize(defaultContent))
-  const [tab, setTab] = useState<keyof Content>('profile')
-  const [collapsed, setCollapsed] = useState(false)
+  const [target, setTarget] = useState<ContentPath | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<Notice>(null)
   const [conflict, setConflict] = useState(false)
-  const [message, setMessage] = useState('')
 
   const current = useMemo(() => serialize(content), [content])
-  const dirty = phase === 'ready' && current !== published
+  const changed = useMemo(() => (phase === 'ready' ? changedSections(published, current) : []), [phase, published, current])
+  const dirty = changed.length > 0
 
   // ── load from GitHub ──────────────────────────────────────
   const load = useCallback(
     async (tok: string, { keepDraft = true } = {}) => {
       setPhase('loading')
       setNotice(null)
+      setConflict(false)
       try {
-        const name = await verifyToken(tok)
+        await verifyToken(tok)
         const { text, sha } = await readContentFile(tok)
         const remote = JSON.parse(text) as Content
-        setRepoName(name)
         setBaseSha(sha)
         setPublished(serialize(remote))
 
@@ -100,7 +135,7 @@ export default function Studio() {
         } else if (e instanceof GitHubError && e.status === 404) {
           setNotice({
             kind: 'err',
-            text: `Couldn't find ${STUDIO_CONFIG.owner}/${STUDIO_CONFIG.repo} → ${STUDIO_CONFIG.contentPath} on "${STUDIO_CONFIG.branch}". Push the project first, or check that the token has access to this repo.`,
+            text: `Couldn't find ${STUDIO_CONFIG.owner}/${STUDIO_CONFIG.repo} → ${STUDIO_CONFIG.contentPath} on "${STUDIO_CONFIG.branch}". Push the project first, or check the token has access to this repo.`,
           })
         } else {
           setNotice({ kind: 'err', text: e instanceof Error ? e.message : 'Something went wrong.' })
@@ -115,6 +150,38 @@ export default function Studio() {
     if (token) load(token)
     // run once on mount with the saved token
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── give the page its Edit buttons ────────────────────────
+  useEffect(() => {
+    if (phase !== 'ready') {
+      setEditor(null)
+      return
+    }
+    setEditor({
+      active: target ? target.join('.') : null,
+      open: (path) => setTarget(path),
+      add: (listPath) => {
+        const list = (getIn(content, listPath) as unknown[]) ?? []
+        const key = String(listPath[listPath.length - 1])
+        setContent(setIn(content, listPath, [...list, newItem(list, key)]) as Content)
+        setTarget([...listPath, list.length])
+      },
+    })
+  }, [phase, target, content, setContent, setEditor])
+
+  useEffect(() => () => setEditor(null), [setEditor])
+
+  // close the card if its item disappeared (deleted, discarded)
+  const targetValue = target ? getIn(content, target) : undefined
+  useEffect(() => {
+    if (target && targetValue === undefined) setTarget(null)
+  }, [target, targetValue])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setTarget(null)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   // ── autosave draft & warn before leaving ──────────────────
@@ -138,13 +205,12 @@ export default function Studio() {
     setConflict(false)
     try {
       const sha = overwrite ? await currentContentSha(token) : baseSha
-      const msg = message.trim() || `studio: update ${changedSections(published, current).join(', ') || 'content'}`
-      const r = await writeContentFile(token, current, sha, msg)
+      const r = await writeContentFile(token, current, sha, `studio: update ${changed.join(', ') || 'content'}`)
       setBaseSha(r.sha)
       setPublished(current)
-      setMessage('')
       store.del(DRAFT_KEY)
-      setNotice({ kind: 'ok', text: 'Published! GitHub is rebuilding the site; it goes live in about a minute.', link: { href: `${repoUrl}/actions`, label: 'Watch the deploy' } })
+      setTarget(null)
+      setNotice({ kind: 'ok', text: 'Published! The site rebuilds and goes live in about a minute.', link: { href: `${repoUrl}/actions`, label: 'Watch the deploy' } })
     } catch (e) {
       if (isConflict(e)) {
         setConflict(true)
@@ -172,11 +238,11 @@ export default function Studio() {
   }
 
   const logout = () => {
-    if (dirty && !window.confirm('You have unpublished changes. Log out anyway? (They stay saved as a draft on this device.)')) return
     store.del(TOKEN_KEY)
     setToken('')
+    setTarget(null)
     setPhase('login')
-    setNotice(null)
+    setNotice(dirty ? { kind: 'info', text: 'Logged out. Your unpublished changes are kept as a draft on this device.' } : null)
   }
 
   const upload = useCallback(
@@ -188,144 +254,232 @@ export default function Studio() {
     [token, setPreview],
   )
 
-  const goTo = (key: keyof Content) => {
-    setTab(key)
-    document.getElementById(SECTION_FOR[key] ?? '')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
-  // ── collapsed pill ────────────────────────────────────────
-  if (collapsed) {
+  // ── login / loading ───────────────────────────────────────
+  if (phase !== 'ready') {
     return (
-      <button
-        onClick={() => setCollapsed(false)}
-        className="fixed right-5 bottom-5 z-[1000] inline-flex items-center gap-2 rounded-full border border-accent/50 bg-ink/90 px-4 py-2.5 text-sm font-medium text-white shadow-2xl shadow-black/60 backdrop-blur"
-      >
-        <FiEdit3 className="text-accent" /> Studio
-        {dirty && <span className="h-2 w-2 rounded-full bg-accent" aria-label="unsaved changes" />}
-      </button>
+      <div className="fixed right-3 bottom-3 left-3 z-[1000] max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border border-line bg-[#0e0e11]/97 font-sans text-soft shadow-2xl shadow-black/70 backdrop-blur-xl sm:left-auto sm:w-[400px]">
+        <div className="flex items-center gap-2.5 border-b border-line px-5 py-3.5">
+          <FiEdit3 className="text-accent" />
+          <span className="flex-1 font-display font-semibold text-white">Studio</span>
+          <button onClick={exitStudio} className="text-xs text-mute hover:text-white">
+            Exit
+          </button>
+        </div>
+        {phase === 'loading' ? (
+          <div className="px-5 py-10 text-center text-sm text-mute">Loading content from GitHub…</div>
+        ) : (
+          <Login
+            notice={notice}
+            onSubmit={(t, remember) => {
+              store.set(TOKEN_KEY, t, remember)
+              setToken(t)
+              load(t)
+            }}
+          />
+        )}
+      </div>
     )
   }
 
+  // ── editing ───────────────────────────────────────────────
   return (
-    <aside className="fixed top-0 right-0 z-[1000] flex h-dvh w-full flex-col border-l border-line bg-[#0e0e11]/97 font-sans text-soft shadow-[-24px_0_60px_-20px_rgb(0_0_0/0.8)] backdrop-blur-xl sm:w-[440px]">
-      {/* header */}
-      <header className="flex items-center gap-3 border-b border-line px-5 py-3.5">
-        <FiEdit3 className="text-accent" />
-        <div className="min-w-0 flex-1">
-          <div className="font-display text-base font-semibold text-white">Studio</div>
-          <div className="truncate font-mono text-[11px] text-mute">{repoName || `${STUDIO_CONFIG.owner}/${STUDIO_CONFIG.repo}`}</div>
-        </div>
-        {phase === 'ready' && (
-          <button onClick={logout} title="Log out" className="grid h-8 w-8 place-items-center rounded-lg text-mute hover:bg-white/5 hover:text-white">
-            <FiLogOut />
-          </button>
-        )}
-        <button onClick={() => setCollapsed(true)} title="Minimise" className="grid h-8 w-8 place-items-center rounded-lg text-mute hover:bg-white/5 hover:text-white">
-          <FiMinimize2 />
-        </button>
-      </header>
-
-      {phase === 'login' && <Login notice={notice} onSubmit={(t, remember) => { store.set(TOKEN_KEY, t, remember); setToken(t); load(t) }} />}
-
-      {phase === 'loading' && <div className="grid flex-1 place-items-center text-sm text-mute">Loading content from GitHub…</div>}
-
-      {phase === 'ready' && (
-        <>
-          {/* tabs */}
-          <nav className="flex gap-1.5 overflow-x-auto border-b border-line px-4 py-2.5 [scrollbar-width:none]">
-            {(Object.keys(content) as (keyof Content)[]).map((key) => (
-              <button
-                key={key}
-                onClick={() => goTo(key)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  tab === key ? 'bg-accent text-ink' : 'text-mute hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                {labelFor(key)}
-              </button>
-            ))}
-          </nav>
-
-          {/* fields */}
-          <div className="flex-1 overflow-y-auto px-5 py-5">
-            <UploadContext.Provider value={upload}>
-              <Field
-                key={tab}
-                k={tab}
-                value={content[tab]}
-                hideLabel={!Array.isArray(content[tab])}
-                onChange={(v) => setContent({ ...content, [tab]: v } as Content)}
-              />
-            </UploadContext.Provider>
-          </div>
-
-          {/* footer */}
-          <footer className="space-y-3 border-t border-line px-5 py-4">
-            {notice && <NoticeBox notice={notice} />}
-            {conflict && (
-              <div className="flex gap-2">
-                <button onClick={() => load(token, { keepDraft: false })} className="flex-1 rounded-lg border border-line px-3 py-2 text-xs text-soft hover:text-white">
-                  Load latest (drop mine)
-                </button>
-                <button onClick={() => publish(true)} className="flex-1 rounded-lg border border-red-400/50 px-3 py-2 text-xs text-red-300 hover:bg-red-500/10">
-                  Overwrite with mine
-                </button>
-              </div>
-            )}
-            {dirty && (
-              <input value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Commit message (optional)" className={inputCls} />
-            )}
-            <div className="flex items-center gap-2">
-              <button onClick={download} title="Download content.json" className="grid h-10 w-10 place-items-center rounded-lg border border-line text-mute hover:text-white">
-                <FiDownload />
-              </button>
-              <button
-                onClick={discard}
-                disabled={!dirty || busy}
-                title="Discard changes"
-                className="grid h-10 w-10 place-items-center rounded-lg border border-line text-mute hover:text-white disabled:opacity-30"
-              >
-                <FiRotateCcw />
-              </button>
-              <button
-                onClick={() => publish()}
-                disabled={!dirty || busy}
-                className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-accent text-sm font-semibold text-ink transition-opacity disabled:opacity-35"
-              >
-                <FiSend /> {busy ? 'Publishing…' : dirty ? 'Publish' : 'No changes'}
-              </button>
-            </div>
-          </footer>
-        </>
+    <UploadContext.Provider value={upload}>
+      {target && targetValue !== undefined && (
+        <EditorCard
+          path={target}
+          value={targetValue}
+          content={content}
+          onChange={(v) => setContent(setIn(content, target, v) as Content)}
+          onReplaceList={(listPath, list, nextTarget) => {
+            setContent(setIn(content, listPath, list) as Content)
+            setTarget(nextTarget)
+          }}
+          onClose={() => setTarget(null)}
+        />
       )}
-    </aside>
+
+      <div className="fixed bottom-4 left-1/2 z-[1000] w-[min(640px,calc(100vw-1.5rem))] -translate-x-1/2 font-sans">
+        {notice && (
+          <div className="mb-2">
+            <NoticeBox notice={notice} onClose={() => setNotice(null)}>
+              {conflict && (
+                <div className="mt-2.5 flex gap-2">
+                  <button onClick={() => load(token, { keepDraft: false })} className="rounded-lg border border-line px-3 py-1.5 text-xs text-soft hover:text-white">
+                    Load latest (drop mine)
+                  </button>
+                  <button onClick={() => publish(true)} className="rounded-lg border border-red-400/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-500/10">
+                    Overwrite with mine
+                  </button>
+                </div>
+              )}
+            </NoticeBox>
+          </div>
+        )}
+        <div className="flex items-center gap-1.5 rounded-2xl border border-line bg-[#0e0e11]/95 p-2 pl-4 text-soft shadow-2xl shadow-black/70 backdrop-blur-xl">
+          <FiEdit3 className="shrink-0 text-accent" />
+          <div className="min-w-0 flex-1 truncate text-xs">
+            {dirty ? (
+              <>
+                <span className="font-medium text-white">Unsaved</span>
+                <span className="text-mute"> · {changed.map((k) => labelFor(k)).join(', ')}</span>
+              </>
+            ) : (
+              <span className="text-mute">Studio · everything is published</span>
+            )}
+          </div>
+          <BarIcon title="Discard changes" disabled={!dirty || busy} onClick={discard}>
+            <FiRotateCcw />
+          </BarIcon>
+          <BarIcon title="Download content.json" onClick={download}>
+            <FiDownload />
+          </BarIcon>
+          <BarIcon title="Log out" onClick={logout}>
+            <FiLogOut />
+          </BarIcon>
+          <BarIcon title="Exit studio" onClick={exitStudio}>
+            <FiX />
+          </BarIcon>
+          <button
+            onClick={() => publish()}
+            disabled={!dirty || busy}
+            className="ml-1 inline-flex h-9 shrink-0 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-ink transition-opacity disabled:opacity-35"
+          >
+            <FiSend /> {busy ? 'Publishing…' : 'Publish'}
+          </button>
+        </div>
+      </div>
+    </UploadContext.Provider>
   )
 }
 
-function changedSections(before: string, after: string) {
-  const a = JSON.parse(before) as Record<string, unknown>
-  const b = JSON.parse(after) as Record<string, unknown>
-  return Object.keys(b).filter((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]))
+// ── editor card ─────────────────────────────────────────────
+
+function EditorCard({
+  path,
+  value,
+  content,
+  onChange,
+  onReplaceList,
+  onClose,
+}: {
+  path: ContentPath
+  value: unknown
+  content: Content
+  onChange: (v: unknown) => void
+  onReplaceList: (listPath: ContentPath, list: unknown[], nextTarget: ContentPath | null) => void
+  onClose: () => void
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const section = String(path[0])
+  const isItem = typeof path[path.length - 1] === 'number'
+  const listPath = path.slice(0, -1)
+  const index = path[path.length - 1] as number
+  const list = isItem ? (getIn(content, listPath) as unknown[]) : []
+  const listKey = String(listPath[listPath.length - 1])
+
+  const title = isItem ? summaryOf(value) || `New ${singular(listKey)}` : labelFor(section)
+  const eyebrow = isItem ? `${singular(listKey)} ${index + 1} of ${list.length}` : 'Section'
+
+  const moveTo = (to: number) => {
+    const next = list.slice()
+    const [x] = next.splice(index, 1)
+    next.splice(to, 0, x)
+    onReplaceList(listPath, next, [...listPath, to])
+  }
+
+  return (
+    <div className="fixed top-3 right-3 bottom-24 left-3 z-[1000] flex flex-col overflow-hidden rounded-2xl border border-accent/30 bg-[#0e0e11]/97 font-sans text-soft shadow-2xl shadow-black/70 backdrop-blur-xl sm:top-20 sm:left-auto sm:w-[420px]">
+      <div className="flex items-start gap-3 border-b border-line px-5 py-3.5">
+        <div className="min-w-0 flex-1">
+          <div className="font-mono text-[10px] tracking-widest text-accent uppercase">{eyebrow}</div>
+          <div className="truncate font-display text-base font-semibold text-white">{title}</div>
+        </div>
+        <button onClick={onClose} title="Close (Esc)" className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-mute hover:bg-white/5 hover:text-white">
+          <FiX />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-5 py-5">
+        <Field key={path.join('.')} k={isItem ? listKey : section} parent={isItem ? listKey : undefined} value={value} onChange={onChange} hideLabel={!Array.isArray(value)} />
+      </div>
+
+      {isItem && (
+        <div className="flex items-center gap-1.5 border-t border-line px-4 py-3">
+          <button
+            disabled={index === 0}
+            onClick={() => moveTo(index - 1)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-mute hover:bg-white/5 hover:text-white disabled:opacity-30"
+          >
+            <FiArrowUp /> Move up
+          </button>
+          <button
+            disabled={index === list.length - 1}
+            onClick={() => moveTo(index + 1)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-mute hover:bg-white/5 hover:text-white disabled:opacity-30"
+          >
+            <FiArrowDown /> Move down
+          </button>
+          <div className="flex-1" />
+          {confirmDelete ? (
+            <button
+              autoFocus
+              onBlur={() => setConfirmDelete(false)}
+              onClick={() => onReplaceList(listPath, list.filter((_, j) => j !== index), null)}
+              className="rounded-lg bg-red-500/15 px-3 py-1.5 text-xs font-medium text-red-300"
+            >
+              Yes, delete it
+            </button>
+          ) : (
+            <button onClick={() => setConfirmDelete(true)} className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-mute hover:bg-red-500/10 hover:text-red-300">
+              <FiTrash2 /> Delete
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
-function NoticeBox({ notice }: { notice: NonNullable<Notice> }) {
+// ── small pieces ────────────────────────────────────────────
+
+function BarIcon({ title, onClick, disabled, children }: { title: string; onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      disabled={disabled}
+      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-mute transition-colors hover:bg-white/5 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent"
+    >
+      {children}
+    </button>
+  )
+}
+
+function NoticeBox({ notice, onClose, children }: { notice: NonNullable<Notice>; onClose?: () => void; children?: React.ReactNode }) {
   const style = {
-    ok: 'border-green-500/30 bg-green-500/10 text-green-200',
-    err: 'border-red-500/30 bg-red-500/10 text-red-200',
-    info: 'border-line bg-white/[0.03] text-soft',
+    ok: 'border-green-500/30 bg-[#0f1a13]/95 text-green-200',
+    err: 'border-red-500/30 bg-[#1c0f10]/95 text-red-200',
+    info: 'border-line bg-[#0e0e11]/95 text-soft',
   }[notice.kind]
   const Icon = notice.kind === 'ok' ? FiCheckCircle : FiAlertTriangle
   return (
-    <div className={`flex gap-2.5 rounded-lg border px-3 py-2.5 text-xs leading-relaxed ${style}`}>
+    <div className={`flex gap-2.5 rounded-xl border px-3.5 py-3 text-xs leading-relaxed shadow-xl shadow-black/50 backdrop-blur-xl ${style}`}>
       <Icon className="mt-0.5 shrink-0" />
-      <div>
+      <div className="min-w-0 flex-1">
         {notice.text}
         {notice.link && (
           <a href={notice.link.href} target="_blank" rel="noreferrer" className="ml-1 inline-flex items-center gap-1 underline underline-offset-2">
             {notice.link.label} <FiExternalLink />
           </a>
         )}
+        {children}
       </div>
+      {onClose && (
+        <button onClick={onClose} aria-label="Dismiss" className="shrink-0 opacity-60 hover:opacity-100">
+          <FiX />
+        </button>
+      )}
     </div>
   )
 }
@@ -335,34 +489,26 @@ function Login({ notice, onSubmit }: { notice: Notice; onSubmit: (token: string,
   const [remember, setRemember] = useState(true)
   return (
     <form
-      className="flex-1 space-y-5 overflow-y-auto px-5 py-6"
+      className="space-y-4 px-5 py-5"
       onSubmit={(e) => {
         e.preventDefault()
         if (value.trim()) onSubmit(value.trim(), remember)
       }}
     >
-      <div>
-        <h2 className="font-display text-xl font-semibold text-white">Unlock editing</h2>
-        <p className="mt-2 text-sm leading-relaxed text-mute">
-          Paste a GitHub fine-grained token. It's stored only in this browser and sent only to GitHub, which checks it on every publish.
-        </p>
-      </div>
+      <p className="text-sm leading-relaxed text-mute">
+        Paste your GitHub token to unlock editing. It stays in this browser and is only sent to GitHub, which checks it on every publish.
+      </p>
       {notice && <NoticeBox notice={notice} />}
-      <div>
-        <label htmlFor="studio-token" className="mb-1.5 block font-mono text-[11px] tracking-wider text-mute uppercase">
-          Token
-        </label>
-        <input
-          id="studio-token"
-          type="password"
-          autoComplete="off"
-          spellCheck={false}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="github_pat_…"
-          className={inputCls}
-        />
-      </div>
+      <input
+        type="password"
+        aria-label="GitHub token"
+        autoComplete="off"
+        spellCheck={false}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="github_pat_…"
+        className={inputCls}
+      />
       <label className="flex cursor-pointer items-center gap-2.5 text-sm text-soft">
         <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="h-4 w-4 accent-[#ff8a1f]" />
         Remember on this device
@@ -370,25 +516,20 @@ function Login({ notice, onSubmit }: { notice: Notice; onSubmit: (token: string,
       <button type="submit" disabled={!value.trim()} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-accent text-sm font-semibold text-ink disabled:opacity-35">
         <FiKey /> Unlock
       </button>
-
-      <div className="rounded-xl border border-line/70 p-4 text-xs leading-relaxed text-mute">
-        <div className="mb-2 font-medium text-soft">Making a token (one time)</div>
-        <ol className="list-decimal space-y-1 pl-4">
+      <details className="rounded-xl border border-line/70 px-4 py-3 text-xs leading-relaxed text-mute">
+        <summary className="cursor-pointer text-soft">How to make a token</summary>
+        <ol className="mt-2 list-decimal space-y-1 pl-4">
           <li>
             Open{' '}
             <a className="text-accent underline underline-offset-2" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noreferrer">
               GitHub → new fine-grained token
             </a>
           </li>
-          <li>Expiration: 90 days</li>
-          <li>
-            Repository access: <span className="text-soft">Only select repositories → {STUDIO_CONFIG.repo}</span>
-          </li>
-          <li>
-            Permissions → Contents: <span className="text-soft">Read and write</span> (nothing else)
-          </li>
+          <li>Expiration: 90 days or more</li>
+          <li>Repository access: Only select repositories → {STUDIO_CONFIG.repo}</li>
+          <li>Permissions → Contents: Read and write (nothing else)</li>
         </ol>
-      </div>
+      </details>
     </form>
   )
 }

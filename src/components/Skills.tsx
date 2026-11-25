@@ -1,4 +1,5 @@
 import { useContent } from '../data/ContentContext'
+import { AddButton, EditButton } from './EditControls'
 import { SectionHeading } from './SectionHeading'
 import { TechIcon } from './TechIcon'
 
@@ -16,6 +17,7 @@ export function Skills() {
               className="reveal spot group rounded-3xl border border-line bg-card p-6 transition-transform duration-500 ease-out-expo hover:-translate-y-1.5"
               style={{ '--d': `${gi * 110}ms` } as React.CSSProperties}
             >
+              <EditButton path={['skills', gi]} className="-top-3 right-4" />
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-lg font-semibold">{group.title}</h3>
                 <span className="font-mono text-xs text-mute">0{gi + 1}</span>
@@ -37,10 +39,13 @@ export function Skills() {
             </div>
           ))}
         </div>
+        <AddButton listPath={['skills']} label="Add skill group" className="mt-5 w-full" />
       </div>
 
       {/* marquee strip */}
-      <div className="reveal relative mt-20 overflow-hidden border-y border-line/60 py-5 [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+      <div className="relative mt-20">
+      <EditButton path={['marquee']} label="Edit strip" className="-top-4 right-5 md:right-8" />
+      <div className="reveal relative overflow-hidden border-y border-line/60 py-5 [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
         <div className="flex w-max animate-marquee gap-10 hover:[animation-play-state:paused]">
           {[...marquee, ...marquee].map((m, i) => (
             <span key={i} className="flex items-center gap-10 font-display text-2xl font-semibold whitespace-nowrap text-white/25 transition-colors hover:text-accent md:text-3xl">
@@ -49,6 +54,7 @@ export function Skills() {
             </span>
           ))}
         </div>
+      </div>
       </div>
     </section>
   )

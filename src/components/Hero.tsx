@@ -4,6 +4,7 @@ import { SiAngular, SiDotnet, SiReact } from 'react-icons/si'
 import { TbBrandCSharp } from 'react-icons/tb'
 import type { IconType } from 'react-icons'
 import { useAsset, useContent } from '../data/ContentContext'
+import { EditButton } from './EditControls'
 
 const d = (ms: number) => ({ '--d': `${ms}ms` }) as React.CSSProperties
 
@@ -142,6 +143,7 @@ export function Hero() {
 
   return (
     <section id="top" className="relative isolate flex min-h-[100svh] items-end overflow-hidden pt-28 md:pt-24">
+      <EditButton path={['profile']} label="Edit intro & links" className="top-24 right-5 md:right-8" />
       {/* backgrounds */}
       <div className="bg-grid absolute inset-0 -z-10" />
       <div

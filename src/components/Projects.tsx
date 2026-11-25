@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { FiArrowUpRight, FiCheck, FiGithub } from 'react-icons/fi'
 import type { Project } from '../data/content'
 import { useAsset, useContent } from '../data/ContentContext'
+import { AddButton, EditButton } from './EditControls'
 import { ProjectVisual } from './ProjectVisual'
 import { SectionHeading } from './SectionHeading'
 
@@ -34,7 +35,8 @@ function ProjectRow({ p, i }: { p: Project; i: number }) {
   const asset = useAsset()
   const flip = i % 2 === 1
   return (
-    <article className="grid items-center gap-8 md:gap-12 lg:grid-cols-2">
+    <article className="relative grid items-center gap-8 rounded-3xl md:gap-12 lg:grid-cols-2">
+      <EditButton path={['projects', i]} label="Edit project" className="-top-4 right-0" />
       <div className={`reveal ${flip ? 'reveal-right lg:order-2' : 'reveal-left'}`}>
         <TiltFrame>
           {p.image ? <img src={asset(p.image)} alt={`${p.title} screenshot`} className="h-full w-full object-cover" /> : <ProjectVisual kind={p.visual} />}
@@ -126,6 +128,7 @@ export function Projects() {
             <ProjectRow key={i} p={p} i={i} />
           ))}
         </div>
+        <AddButton listPath={['projects']} label="Add project" className="mt-16 w-full" />
       </div>
     </section>
   )

@@ -43,6 +43,14 @@ const ENUMS: Record<string, string[]> = { visual: ['map', 'rag', 'sign', 'street
 const ASSETS = new Set(['photo', 'image', 'resume'])
 const SUMMARY_KEYS = ['title', 'name', 'label', 'org', 'period']
 
+/** A short name for a list item: its title, name, label… */
+export function summaryOf(item: unknown) {
+  if (!item || typeof item !== 'object') return ''
+  const rec = item as Record<string, unknown>
+  const key = SUMMARY_KEYS.find((s) => typeof rec[s] === 'string' && rec[s])
+  return key ? String(rec[key]) : ''
+}
+
 const humanize = (k: string) => k.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())
 export const labelFor = (k: string, parent?: string) =>
   (parent === 'projects' && k === 'status' ? LABELS.status_project : LABELS[k]) ?? humanize(k)
@@ -74,7 +82,7 @@ const TEMPLATES: Record<string, unknown> = {
   experience: { period: '', title: '', org: '', place: '', current: false, points: [] },
 }
 
-function newItem(list: unknown[], key: string) {
+export function newItem(list: unknown[], key: string) {
   if (list.length) return blank(list[0])
   return structuredClone(TEMPLATES[key] ?? '')
 }
@@ -291,7 +299,7 @@ function ListField({ k, value, onChange }: { k: string; value: unknown[]; onChan
   )
 }
 
-function singular(k: string) {
+export function singular(k: string) {
   const m: Record<string, string> = { skills: 'skill group', items: 'skill', now: 'card', experience: 'entry', marquee: 'item', stack: 'tech', roles: 'role' }
   return m[k] ?? k.replace(/ies$/, 'y').replace(/s$/, '')
 }
@@ -332,7 +340,7 @@ function ItemCard(props: {
 }) {
   const { k, item, index, count, open, onToggle, onChange, onShift, onRemove } = props
   const summaryKey = SUMMARY_KEYS.find((s) => typeof item[s] === 'string' && item[s])
-  const summary = summaryKey ? String(item[summaryKey]) : `New ${singular(k)}`
+  const summary = summaryOf(item) || `New ${singular(k)}`
   return (
     <div className={`rounded-xl border transition-colors ${open ? 'border-accent/40 bg-white/[0.02]' : 'border-line/70'}`}>
       <div className="flex items-center gap-1 pr-1.5">
