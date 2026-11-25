@@ -1,7 +1,7 @@
-import { useRef } from 'react'
-import { FiArrowUpRight, FiCheck, FiGithub } from 'react-icons/fi'
+import { useRef, useState } from 'react'
+import { FiArrowUpRight, FiCheck, FiChevronDown, FiChevronUp, FiGithub } from 'react-icons/fi'
 import type { Project } from '../data/content'
-import { useAsset, useContent } from '../data/ContentContext'
+import { useAsset, useContent, useEditor } from '../data/ContentContext'
 import { AddButton, EditButton } from './EditControls'
 import { ProjectVisual } from './ProjectVisual'
 import { SectionHeading } from './SectionHeading'
@@ -106,8 +106,24 @@ function ProjectRow({ p, i }: { p: Project; i: number }) {
   )
 }
 
+/** How many projects show before "Show all". */
+const INITIAL_PROJECTS = 4
+
 export function Projects() {
   const { profile, projects } = useContent()
+  const editing = useEditor() !== null
+  const [expanded, setExpanded] = useState(false)
+  // In the studio every project stays visible so it can be edited.
+  const showAll = expanded || editing
+  const visible = showAll ? projects : projects.slice(0, INITIAL_PROJECTS)
+  const hiddenCount = projects.length - INITIAL_PROJECTS
+
+  const collapse = () => {
+    setExpanded(false)
+    // Bring the reader back to the list instead of leaving them far below it.
+    document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <section id="projects" className="relative border-t border-line/60 py-24 md:py-32">
       <div className="absolute top-1/3 -left-40 -z-10 h-[420px] w-[420px] rounded-full bg-accent/5 blur-[120px]" />
@@ -124,10 +140,32 @@ export function Projects() {
           </a>
         </div>
         <div className="space-y-24 md:space-y-32">
-          {projects.map((p, i) => (
+          {visible.map((p, i) => (
             <ProjectRow key={i} p={p} i={i} />
           ))}
         </div>
+        {hiddenCount > 0 && !editing && (
+          <div className="mt-20 flex justify-center">
+            <button
+              type="button"
+              onClick={expanded ? collapse : () => setExpanded(true)}
+              aria-expanded={expanded}
+              className="group inline-flex items-center gap-2.5 rounded-full border border-line bg-card px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/60 hover:text-accent"
+            >
+              {expanded ? (
+                <>
+                  Show less <FiChevronUp />
+                </>
+              ) : (
+                <>
+                  Show all projects
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 font-mono text-xs text-accent">+{hiddenCount}</span>
+                  <FiChevronDown className="transition-transform duration-300 group-hover:translate-y-0.5" />
+                </>
+              )}
+            </button>
+          </div>
+        )}
         <AddButton listPath={['projects']} label="Add project" className="mt-16 w-full" />
       </div>
     </section>
