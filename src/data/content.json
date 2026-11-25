@@ -186,7 +186,8 @@
       "status": "New",
       "live": "https://zaindrex.github.io/Feedora/",
       "repo": "https://github.com/Zaindrex/Feedora",
-      "image": ""
+      "image": "",
+      "featured": true
     },
     {
       "title": "Neighborlly",
@@ -209,7 +210,8 @@
       "status": "",
       "live": "https://neighborlly.vercel.app/",
       "repo": "https://github.com/Zaindrex",
-      "image": ""
+      "image": "",
+      "featured": true
     },
     {
       "title": "AI Research Assistant",
@@ -231,7 +233,8 @@
       "status": "",
       "live": "",
       "repo": "https://github.com/Zaindrex/AI-Research-Assistant",
-      "image": ""
+      "image": "",
+      "featured": true
     },
     {
       "title": "Adda – Apna Adda",
@@ -252,7 +255,8 @@
       "status": "",
       "live": "",
       "repo": "",
-      "image": ""
+      "image": "",
+      "featured": true
     },
     {
       "title": "Sign Language Interpreter",
@@ -273,7 +277,8 @@
       "status": "",
       "live": "",
       "repo": "https://github.com/Zaindrex/Sign_language_interpreter",
-      "image": ""
+      "image": "",
+      "featured": false
     }
   ],
   "experience": [

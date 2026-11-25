@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { FiArrowUpRight, FiCheck, FiChevronDown, FiChevronUp, FiGithub } from 'react-icons/fi'
+import { useMemo, useRef, useState } from 'react'
+import { FiArrowUpRight, FiCheck, FiChevronDown, FiChevronUp, FiExternalLink, FiGithub } from 'react-icons/fi'
 import type { Project } from '../data/content'
 import { useAsset, useContent, useEditor } from '../data/ContentContext'
 import { AddButton, EditButton } from './EditControls'
@@ -31,12 +31,12 @@ function TiltFrame({ children }: { children: React.ReactNode }) {
   )
 }
 
-function ProjectRow({ p, i }: { p: Project; i: number }) {
+function ProjectRow({ p, i, index }: { p: Project; i: number; index: number }) {
   const asset = useAsset()
   const flip = i % 2 === 1
   return (
     <article className="relative grid items-center gap-8 rounded-3xl md:gap-12 lg:grid-cols-2">
-      <EditButton path={['projects', i]} label="Edit project" className="-top-4 right-0" />
+      <EditButton path={['projects', index]} label="Edit project" className="-top-4 right-0" />
       <div className={`reveal ${flip ? 'reveal-right lg:order-2' : 'reveal-left'}`}>
         <TiltFrame>
           {p.image ? <img src={asset(p.image)} alt={`${p.title} screenshot`} className="h-full w-full object-cover" /> : <ProjectVisual kind={p.visual} />}
@@ -46,7 +46,7 @@ function ProjectRow({ p, i }: { p: Project; i: number }) {
 
       <div className={flip ? 'lg:order-1' : ''}>
         <div className="reveal mb-4 flex items-center gap-3">
-          <span className="font-mono text-sm text-accent">0{i + 1}</span>
+          <span className="font-mono text-sm text-accent">{String(i + 1).padStart(2, '0')}</span>
           <span className="h-px w-10 bg-line" />
           {p.status && (
             <span className="rounded-full border border-accent/40 bg-accent/10 px-2.5 py-0.5 font-mono text-[11px] text-accent">{p.status}</span>
@@ -106,22 +106,42 @@ function ProjectRow({ p, i }: { p: Project; i: number }) {
   )
 }
 
-/** How many projects show before "Show all". */
-const INITIAL_PROJECTS = 4
+/** If no project is marked featured, this many from the top get big rows. */
+const FALLBACK_FEATURED = 4
+/** Max filter chips above the "more projects" grid (most-used tech first). */
+const MAX_FILTERS = 8
+
+type Indexed = { p: Project; index: number }
 
 export function Projects() {
   const { profile, projects } = useContent()
   const editing = useEditor() !== null
   const [expanded, setExpanded] = useState(false)
-  // In the studio every project stays visible so it can be edited.
-  const showAll = expanded || editing
-  const visible = showAll ? projects : projects.slice(0, INITIAL_PROJECTS)
-  const hiddenCount = projects.length - INITIAL_PROJECTS
+  const [filter, setFilter] = useState('All')
+
+  // Featured = big rows. Chosen with the "Featured" checkbox in the studio.
+  const { featured, more } = useMemo(() => {
+    const all: Indexed[] = projects.map((p, index) => ({ p, index }))
+    const anyMarked = projects.some((p) => p.featured)
+    const isFeatured = (x: Indexed) => (anyMarked ? !!x.p.featured : x.index < FALLBACK_FEATURED)
+    return { featured: all.filter(isFeatured), more: all.filter((x) => !isFeatured(x)) }
+  }, [projects])
+
+  // Filter chips come from the tech tags of the grid projects.
+  const filters = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const { p } of more) for (const t of new Set(p.stack.map((x) => x.trim()).filter(Boolean))) counts.set(t, (counts.get(t) ?? 0) + 1)
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, MAX_FILTERS).map(([t]) => t)
+  }, [more])
+
+  const activeFilter = filter !== 'All' && filters.includes(filter) ? filter : 'All'
+  const shown = activeFilter === 'All' ? more : more.filter(({ p }) => p.stack.some((t) => t.trim() === activeFilter))
+  const open = expanded || editing // the studio always shows everything so it can be edited
 
   const collapse = () => {
     setExpanded(false)
-    // Bring the reader back to the list instead of leaving them far below it.
-    document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setFilter('All')
+    document.getElementById('more-projects')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
   return (
@@ -139,35 +159,123 @@ export function Projects() {
             <FiGithub /> All repositories <FiArrowUpRight />
           </a>
         </div>
+
         <div className="space-y-24 md:space-y-32">
-          {visible.map((p, i) => (
-            <ProjectRow key={i} p={p} i={i} />
+          {featured.map(({ p, index }, i) => (
+            <ProjectRow key={index} p={p} i={i} index={index} />
           ))}
         </div>
-        {hiddenCount > 0 && !editing && (
-          <div className="mt-20 flex justify-center">
-            <button
-              type="button"
-              onClick={expanded ? collapse : () => setExpanded(true)}
-              aria-expanded={expanded}
-              className="group inline-flex items-center gap-2.5 rounded-full border border-line bg-card px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/60 hover:text-accent"
-            >
-              {expanded ? (
-                <>
-                  Show less <FiChevronUp />
-                </>
-              ) : (
-                <>
-                  Show all projects
-                  <span className="rounded-full bg-accent/15 px-2 py-0.5 font-mono text-xs text-accent">+{hiddenCount}</span>
+
+        {more.length > 0 && (
+          <div id="more-projects" className="mt-24 md:mt-28">
+            {!open ? (
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setExpanded(true)}
+                  aria-expanded={false}
+                  className="group inline-flex items-center gap-2.5 rounded-full border border-line bg-card px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/60 hover:text-accent"
+                >
+                  Show more projects
+                  <span className="rounded-full bg-accent/15 px-2 py-0.5 font-mono text-xs text-accent">+{more.length}</span>
                   <FiChevronDown className="transition-transform duration-300 group-hover:translate-y-0.5" />
-                </>
-              )}
-            </button>
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+                  <h3 className="font-display text-2xl font-semibold text-white">
+                    More <span className="text-accent">projects</span>
+                    <span className="ml-3 font-mono text-sm font-normal text-mute">{shown.length}</span>
+                  </h3>
+                  {filters.length > 1 && (
+                    <div className="flex flex-wrap gap-2" role="group" aria-label="Filter projects by technology">
+                      {['All', ...filters].map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setFilter(t)}
+                          aria-pressed={activeFilter === t}
+                          className={`rounded-full border px-3.5 py-1.5 font-mono text-xs transition-colors ${
+                            activeFilter === t ? 'border-accent bg-accent text-ink' : 'border-line text-mute hover:border-accent/50 hover:text-white'
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {shown.map(({ p, index }, i) => (
+                    <ProjectCard key={index} p={p} index={index} delay={Math.min(i, 5) * 70} />
+                  ))}
+                </div>
+
+                {!editing && (
+                  <div className="mt-12 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={collapse}
+                      aria-expanded={true}
+                      className="inline-flex items-center gap-2 rounded-full border border-line px-5 py-2.5 text-sm text-mute transition-colors hover:border-accent/60 hover:text-white"
+                    >
+                      Show less <FiChevronUp />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
+
         <AddButton listPath={['projects']} label="Add project" className="mt-16 w-full" />
       </div>
     </section>
+  )
+}
+
+function ProjectCard({ p, index, delay }: { p: Project; index: number; delay: number }) {
+  const MAX_TAGS = 4
+  return (
+    <article
+      className="reveal spot group relative flex flex-col rounded-3xl border border-line bg-card p-6 transition-transform duration-500 ease-out-expo hover:-translate-y-1.5"
+      style={{ '--d': `${delay}ms` } as React.CSSProperties}
+    >
+      <EditButton path={['projects', index]} className="-top-3 right-4" />
+      <div className="flex items-start justify-between gap-3">
+        <h4 className="text-lg leading-snug font-semibold text-white">{p.title || 'Untitled project'}</h4>
+        {p.status && (
+          <span className="shrink-0 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 font-mono text-[10px] text-accent">{p.status}</span>
+        )}
+      </div>
+      <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-mute">{p.tagline || p.problem}</p>
+
+      <div className="mt-auto pt-5">
+        <div className="flex flex-wrap gap-1.5">
+          {p.stack.slice(0, MAX_TAGS).map((t, k) => (
+            <span key={k} className="rounded-md border border-line bg-ink/60 px-2 py-0.5 font-mono text-[11px] text-soft">
+              {t}
+            </span>
+          ))}
+          {p.stack.length > MAX_TAGS && <span className="px-1 py-0.5 font-mono text-[11px] text-mute">+{p.stack.length - MAX_TAGS}</span>}
+        </div>
+        {(p.live || p.repo) && (
+          <div className="mt-4 flex gap-4 border-t border-line/70 pt-4 text-sm">
+            {p.live && (
+              <a href={p.live} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-white transition-colors hover:text-accent">
+                <FiExternalLink /> Live
+              </a>
+            )}
+            {p.repo && (
+              <a href={p.repo} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-mute transition-colors hover:text-white">
+                <FiGithub /> Source
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </article>
   )
 }

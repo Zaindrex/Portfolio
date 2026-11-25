@@ -48,6 +48,8 @@ export type Project = {
   repo: string
   /** Optional screenshot in /public; replaces the illustrated preview when set. */
   image: string
+  /** Big row at the top of Projects. Everything else goes in the "More projects" grid. */
+  featured: boolean
 }
 
 export type TimelineItem = {

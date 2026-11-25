@@ -25,6 +25,7 @@ const LABELS: Record<string, string> = {
   repo: 'Source code URL',
   image: 'Screenshot',
   current: 'Current role',
+  featured: 'Featured (big row at the top)',
   points: 'Bullet points',
   marquee: 'Scrolling tech strip',
 }
@@ -35,6 +36,7 @@ const HINTS: Record<string, string> = {
   formspreeId: 'From formspree.io. Empty = contact form opens the mail app.',
   icon: 'Pick a known icon key, or type any text (falls back to a generic icon).',
   status: 'Leave empty to hide.',
+  featured: 'Unticked projects go in the “More projects” grid.',
 }
 
 const LONG_TEXT = new Set(['tagline', 'problem', 'heading', 'text'])
@@ -78,7 +80,7 @@ const TEMPLATES: Record<string, unknown> = {
   skills: { title: '', items: [] },
   items: { name: '', icon: '' },
   now: { label: '', text: '' },
-  projects: { title: '', tagline: '', problem: '', highlights: [], stack: [], visual: 'map', status: '', live: '', repo: '', image: '' },
+  projects: { title: '', tagline: '', problem: '', highlights: [], stack: [], visual: 'map', status: '', live: '', repo: '', image: '', featured: false },
   experience: { period: '', title: '', org: '', place: '', current: false, points: [] },
 }
 
@@ -119,10 +121,13 @@ const Hint = ({ k }: { k: string }) => (HINTS[k] ? <p className="mt-1 text-xs te
 
 function BoolField({ k, value, onChange }: { k: string; value: boolean; onChange: (v: unknown) => void }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 text-sm text-soft">
-      <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 accent-[#ff8a1f]" />
-      {labelFor(k)}
-    </label>
+    <div>
+      <label className="flex cursor-pointer items-center gap-2.5 text-sm text-soft">
+        <input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} className="h-4 w-4 accent-[#ff8a1f]" />
+        {labelFor(k)}
+      </label>
+      <Hint k={k} />
+    </div>
   )
 }
 
