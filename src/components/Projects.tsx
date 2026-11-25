@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FiArrowUpRight, FiCheck, FiChevronDown, FiChevronUp, FiExternalLink, FiGithub } from 'react-icons/fi'
 import type { Project } from '../data/content'
 import { useAsset, useContent, useEditor } from '../data/ContentContext'
@@ -119,6 +119,9 @@ export function Projects() {
   const editing = useEditor() !== null
   const [expanded, setExpanded] = useState(false)
   const [filter, setFilter] = useState('All')
+
+  // A newly added project starts with no tech tags; clear the filter so it doesn't vanish.
+  useEffect(() => setFilter('All'), [projects.length])
 
   // Featured = big rows. Chosen with the "Featured" checkbox in the studio.
   const { featured, more } = useMemo(() => {

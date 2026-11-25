@@ -32,7 +32,10 @@ const LABELS: Record<string, string> = {
 
 const HINTS: Record<string, string> = {
   photo: 'Transparent PNG/WebP cut-out looks best.',
-  image: 'Replaces the illustration. Leave empty to keep the illustration.',
+  image: 'Replaces the illustration. Leave empty to keep the illustration. Only shown for featured projects.',
+  visual: 'Only shown for featured projects.',
+  problem: 'Featured projects show this in full; grid cards fall back to it only when the tagline is empty.',
+  highlights: 'Only shown for featured projects.',
   formspreeId: 'From formspree.io. Empty = contact form opens the mail app.',
   icon: 'Pick a known icon key, or type any text (falls back to a generic icon).',
   status: 'Leave empty to hide.',
@@ -264,6 +267,7 @@ function ListField({ k, value, onChange }: { k: string; value: unknown[]; onChan
   return (
     <div>
       <Label k={k} />
+      {HINTS[k] && <p className="-mt-0.5 mb-2 text-xs text-mute/80">{HINTS[k]}</p>}
       <div className={isObjects ? 'space-y-2' : 'space-y-1.5'}>
         {value.map((item, i) =>
           isObjects ? (
