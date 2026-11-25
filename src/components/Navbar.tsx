@@ -48,7 +48,7 @@ export function Navbar() {
         }`}
       >
         <a href="#top" className="group flex items-center gap-2.5" aria-label="Back to top">
-          <img src="/logo.webp" alt="Zaindrex logo" width={36} height={36} className="h-9 w-9 rounded-xl ring-1 ring-accent/30 transition-transform duration-500 group-hover:rotate-[360deg]" />
+          <img src={asset('/logo.webp')} alt="Zaindrex logo" width={36} height={36} className="h-9 w-9 rounded-xl ring-1 ring-accent/30 transition-transform duration-500 group-hover:rotate-[360deg]" />
           <span className="font-display text-lg font-semibold tracking-tight text-white">
             Zaindrex<span className="text-accent">.</span>
           </span>
