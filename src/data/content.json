@@ -1,0 +1,284 @@
+{
+  "profile": {
+    "name": "Md Asif Raza",
+    "firstName": "Md Asif",
+    "lastName": "Raza",
+    "role": "Full-Stack Developer",
+    "roles": [
+      ".NET + Angular + React",
+      "Secure REST APIs",
+      "AI & RAG apps"
+    ],
+    "tagline": "I build end-to-end applications that bring ideas to life — from designing robust backends and databases to creating intuitive interfaces and intelligent solutions.",
+    "location": "Noida, India",
+    "email": "asifraza822002@gmail.com",
+    "status": "Open to opportunities",
+    "photo": "/profile-cutout.webp",
+    "resume": "/Resume_Asif.pdf",
+    "socials": {
+      "github": "https://github.com/Zaindrex",
+      "linkedin": "https://www.linkedin.com/in/md-asif-raza-600975247",
+      "leetcode": "",
+      "hackerrank": ""
+    }
+  },
+  "about": {
+    "heading": "I build things that are secure on the back and simple on the front.",
+    "paragraphs": [
+      "I’m a full-stack engineer at LTM Limited, working in the .NET ecosystem: C#, ASP.NET Core Web APIs, Entity Framework Core and Angular. Most of my day goes into clean REST APIs, JWT-based auth and typed frontends that are easy to maintain.",
+      "Outside work I build products I want to exist: a hyperlocal freelancer finder, a street-food map for stalls too small for Google Maps, and a local-LLM research assistant. I like problems that sit between data and AI."
+    ],
+    "now": [
+      {
+        "label": "At work",
+        "text": "Teaching .NET to think, Angular to talk, and APIs to play nice"
+      },
+      {
+        "label": "Exploring",
+        "text": "LLMs, new tricks, and a lot of curious tinkering"
+      },
+      {
+        "label": "Side quests",
+        "text": "Turning “There should be an app for that” into reality"
+      }
+    ],
+    "currentRole": "Software Engineer @ LTM"
+  },
+  "skills": [
+    {
+      "title": "Backend",
+      "items": [
+        {
+          "name": "C#",
+          "icon": "csharp"
+        },
+        {
+          "name": ".NET / ASP.NET Core",
+          "icon": "dotnet"
+        },
+        {
+          "name": "Web API / REST",
+          "icon": "api"
+        },
+        {
+          "name": "EF Core",
+          "icon": "database"
+        },
+        {
+          "name": "JWT Auth",
+          "icon": "jwt"
+        }
+      ]
+    },
+    {
+      "title": "Frontend",
+      "items": [
+        {
+          "name": "Angular",
+          "icon": "angular"
+        },
+        {
+          "name": "React",
+          "icon": "react"
+        },
+        {
+          "name": "TypeScript",
+          "icon": "typescript"
+        },
+        {
+          "name": "JavaScript",
+          "icon": "javascript"
+        },
+        {
+          "name": "Tailwind CSS",
+          "icon": "tailwind"
+        }
+      ]
+    },
+    {
+      "title": "AI & Data",
+      "items": [
+        {
+          "name": "Python",
+          "icon": "python"
+        },
+        {
+          "name": "LangChain",
+          "icon": "langchain"
+        },
+        {
+          "name": "Qdrant",
+          "icon": "qdrant"
+        },
+        {
+          "name": "Ollama",
+          "icon": "ollama"
+        },
+        {
+          "name": "TensorFlow",
+          "icon": "tensorflow"
+        }
+      ]
+    },
+    {
+      "title": "Databases & Tools",
+      "items": [
+        {
+          "name": "SQL Server",
+          "icon": "sqlserver"
+        },
+        {
+          "name": "MySQL",
+          "icon": "mysql"
+        },
+        {
+          "name": "MongoDB",
+          "icon": "mongodb"
+        },
+        {
+          "name": "Supabase",
+          "icon": "supabase"
+        },
+        {
+          "name": "Git",
+          "icon": "git"
+        }
+      ]
+    }
+  ],
+  "marquee": [
+    "C#",
+    "ASP.NET Core",
+    "Web API",
+    "Entity Framework Core",
+    "Angular",
+    "TypeScript",
+    "React",
+    "JWT / RSA",
+    "SQL Server",
+    "Python",
+    "LangChain",
+    "Qdrant",
+    "Ollama",
+    "Supabase",
+    "Leaflet",
+    "Git"
+  ],
+  "projects": [
+    {
+      "title": "Neighborlly",
+      "tagline": "Find skilled freelancers within 5 km of you.",
+      "problem": "Local talent (tutors, electricians, designers) is hard to discover by distance. Neighborlly shows who’s nearby on a live map and lets you chat instantly.",
+      "highlights": [
+        "Geospatial discovery with Leaflet.js + Turf.js radius queries",
+        "Supabase auth and real-time chat",
+        "Responsive UI with React, Tailwind and shadcn/ui; tested with 50+ mock users"
+      ],
+      "stack": [
+        "React",
+        "TypeScript",
+        "Supabase",
+        "Leaflet",
+        "Turf.js",
+        "Tailwind"
+      ],
+      "visual": "map",
+      "status": "",
+      "live": "https://neighborlly.vercel.app/",
+      "repo": "https://github.com/Zaindrex",
+      "image": ""
+    },
+    {
+      "title": "AI Research Assistant",
+      "tagline": "Ask questions across academic papers, answered by a local LLM.",
+      "problem": "Skimming dozens of papers for one answer is slow. This RAG app retrieves the relevant passages with semantic search and summarises them with a locally hosted model.",
+      "highlights": [
+        "Qdrant vector search over 100+ research articles",
+        "LangChain retrieval pipeline with Ollama for fully local inference",
+        "~90% answer relevance in evaluation"
+      ],
+      "stack": [
+        "Python",
+        "LangChain",
+        "Qdrant",
+        "Ollama",
+        "Gradio"
+      ],
+      "visual": "rag",
+      "status": "",
+      "live": "",
+      "repo": "https://github.com/Zaindrex/AI-Research-Assistant",
+      "image": ""
+    },
+    {
+      "title": "Adda – Apna Adda",
+      "tagline": "A map of the street-food stalls Google Maps forgot.",
+      "problem": "The best chai tapri or thela has no Google listing. Adda maps them with live-camera photos, real opening hours, ratings and in-app directions.",
+      "highlights": [
+        "Live camera capture only, so every stall photo is genuine",
+        "Gmail login, admin approval flow, ratings & reviews",
+        "“King / Queen of the Streets” leaderboard"
+      ],
+      "stack": [
+        "React",
+        "Maps",
+        "Auth",
+        "Vercel"
+      ],
+      "visual": "street",
+      "status": "",
+      "live": "",
+      "repo": "",
+      "image": ""
+    },
+    {
+      "title": "Sign Language Interpreter",
+      "tagline": "Real-time hand-sign recognition with speech output.",
+      "problem": "Bridging sign language and speech in real time using only a webcam: detect the hand, classify the gesture, speak the word.",
+      "highlights": [
+        "MediaPipe hand-landmark detection + OpenCV preprocessing",
+        "TensorFlow gesture classifier trained on 100+ collected samples",
+        "Speech output and modular retraining for new signs"
+      ],
+      "stack": [
+        "Python",
+        "OpenCV",
+        "MediaPipe",
+        "TensorFlow"
+      ],
+      "visual": "sign",
+      "status": "",
+      "live": "",
+      "repo": "https://github.com/Zaindrex/Sign_language_interpreter",
+      "image": ""
+    }
+  ],
+  "experience": [
+    {
+      "period": "2026 — Present",
+      "title": "Software Engineer · .NET Full Stack",
+      "org": "LTM Limited",
+      "place": "Noida",
+      "current": true,
+      "points": [
+        "Build RESTful APIs in C# / ASP.NET Core with DTOs, dependency injection and clean OOP design.",
+        "Secure APIs with JWT authentication & authorization using RSA-based token signing and validation.",
+        "Develop Angular + TypeScript frontends: components, routing, reactive forms and validation, backed by EF Core and SQL."
+      ]
+    },
+    {
+      "period": "2021 — 2025",
+      "title": "B.Tech, Information Technology",
+      "org": "Noida Institute of Engineering and Technology",
+      "place": "Greater Noida",
+      "current": false,
+      "points": [
+        "Team lead at E-Cell NIET: organised events and led a student team.",
+        "Coursera: Python for Data Science & AI · Web Development · Databases & SQL."
+      ]
+    }
+  ],
+  "contact": {
+    "formspreeId": ""
+  }
+}
