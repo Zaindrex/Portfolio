@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { FiArrowUpRight, FiCheck, FiChevronDown, FiChevronUp, FiExternalLink, FiGithub } from 'react-icons/fi'
 import type { Project } from '../data/content'
 import { useAsset, useContent, useEditor } from '../data/ContentContext'
+import { filterLabels } from '../data/techFilters'
 import { AddButton, EditButton } from './EditControls'
 import { ProjectVisual } from './ProjectVisual'
 import { SectionHeading } from './SectionHeading'
@@ -108,7 +109,7 @@ function ProjectRow({ p, i, index }: { p: Project; i: number; index: number }) {
 
 /** If no project is marked featured, this many from the top get big rows. */
 const FALLBACK_FEATURED = 4
-/** Max filter chips above the "more projects" grid (most-used tech first). */
+/** Max filter chips above the "more projects" grid (most-used first). Only languages and frameworks, see data/techFilters.ts. */
 const MAX_FILTERS = 8
 
 type Indexed = { p: Project; index: number }
@@ -127,15 +128,17 @@ export function Projects() {
     return { featured: all.filter(isFeatured), more: all.filter((x) => !isFeatured(x)) }
   }, [projects])
 
-  // Filter chips come from the tech tags of the grid projects.
-  const filters = useMemo(() => {
+  // Filter chips: the languages and frameworks used by the grid projects.
+  const { filters, labelsOf } = useMemo(() => {
+    const labelsOf = new Map(more.map(({ p, index }) => [index, filterLabels(p.stack)]))
     const counts = new Map<string, number>()
-    for (const { p } of more) for (const t of new Set(p.stack.map((x) => x.trim()).filter(Boolean))) counts.set(t, (counts.get(t) ?? 0) + 1)
-    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, MAX_FILTERS).map(([t]) => t)
+    for (const labels of labelsOf.values()) for (const l of labels) counts.set(l, (counts.get(l) ?? 0) + 1)
+    const filters = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, MAX_FILTERS).map(([l]) => l)
+    return { filters, labelsOf }
   }, [more])
 
   const activeFilter = filter !== 'All' && filters.includes(filter) ? filter : 'All'
-  const shown = activeFilter === 'All' ? more : more.filter(({ p }) => p.stack.some((t) => t.trim() === activeFilter))
+  const shown = activeFilter === 'All' ? more : more.filter(({ index }) => labelsOf.get(index)?.includes(activeFilter))
   const open = expanded || editing // the studio always shows everything so it can be edited
 
   const collapse = () => {
