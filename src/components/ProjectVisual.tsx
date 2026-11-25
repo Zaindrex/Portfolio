@@ -9,6 +9,7 @@ export function ProjectVisual({ kind }: { kind: Project['visual'] }) {
       {kind === 'street' && <StreetVisual />}
       {kind === 'rag' && <RagVisual />}
       {kind === 'sign' && <SignVisual />}
+      {kind === 'review' && <ReviewVisual />}
     </div>
   )
 }
@@ -148,5 +149,83 @@ function SignVisual() {
         ))}
       </g>
     </svg>
+  )
+}
+
+// QR code → stars → AI draft → Google: the Feedora flow.
+const QR_BITS = '1011010011100101101101001010110110011010010110101100110100101101011001'
+function QrCode() {
+  const n = 11
+  const cells: [number, number][] = []
+  const finder = (x: number, y: number) => x < 3 && y < 3
+  let b = 0
+  for (let y = 0; y < n; y++)
+    for (let x = 0; x < n; x++) {
+      if (finder(x, y) || finder(n - 1 - x, y) || finder(x, n - 1 - y)) continue
+      if (QR_BITS[b++ % QR_BITS.length] === '1') cells.push([x, y])
+    }
+  const Finder = ({ x, y }: { x: number; y: number }) => (
+    <g>
+      <rect x={x} y={y} width="3" height="3" fill="none" stroke="white" strokeWidth="0.6" />
+      <rect x={x + 0.9} y={y + 0.9} width="1.2" height="1.2" fill="white" />
+    </g>
+  )
+  return (
+    <svg viewBox="-0.5 -0.5 12 12" className="h-full w-full" aria-hidden>
+      {cells.map(([x, y]) => (
+        <rect key={`${x}-${y}`} x={x + 0.1} y={y + 0.1} width="0.8" height="0.8" rx="0.15" fill="white" opacity="0.85" />
+      ))}
+      <Finder x={0} y={0} />
+      <Finder x={n - 3} y={0} />
+      <Finder x={0} y={n - 3} />
+    </svg>
+  )
+}
+
+function ReviewVisual() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center gap-3 p-4 font-sans sm:gap-6 sm:p-8">
+      {/* table stand with QR */}
+      <div className="flex shrink-0 flex-col items-center gap-2">
+        <div className="relative h-20 w-20 overflow-hidden rounded-xl border border-line bg-card p-2 shadow-lg sm:h-28 sm:w-28 sm:p-3">
+          <QrCode />
+          <div className="absolute inset-x-0 h-0.5 bg-accent shadow-[0_0_12px_2px_rgb(255_138_31/0.7)] [animation:scan_2.6s_ease-in-out_infinite]" />
+        </div>
+        <span className="font-mono text-[9px] tracking-wider text-mute uppercase sm:text-[10px]">Scan at table</span>
+      </div>
+
+      <svg viewBox="0 0 40 10" className="w-6 shrink-0 text-accent/70 sm:w-10" aria-hidden>
+        <path d="M0 5 H34 M30 1 L36 5 L30 9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+      </svg>
+
+      {/* phone review card */}
+      <div className="w-[58%] max-w-[230px] rounded-2xl border border-line bg-card p-3 shadow-2xl shadow-black/50 sm:p-4">
+        <div className="flex justify-center gap-1 text-sm sm:text-lg">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <span key={i} className="text-accent [animation:star-pop_3.2s_ease-out_infinite]" style={{ animationDelay: `${i * 0.12}s` }}>
+              ★
+            </span>
+          ))}
+        </div>
+        <div className="mt-2 flex flex-wrap justify-center gap-1">
+          {['Friendly staff', 'Great coffee'].map((c) => (
+            <span key={c} className="rounded-md bg-accent/15 px-1.5 py-0.5 text-[8px] text-accent sm:text-[9px]">✓ {c}</span>
+          ))}
+        </div>
+        <div className="mt-2.5 rounded-lg border border-line bg-ink/60 p-2">
+          <div className="mb-1.5 flex items-center gap-1 font-mono text-[8px] text-accent sm:text-[9px]">
+            <span className="h-1 w-1 animate-pulse rounded-full bg-accent" /> AI draft · editable
+          </div>
+          <div className="space-y-1">
+            <div className="h-1.5 w-full rounded bg-white/15" />
+            <div className="h-1.5 w-[88%] rounded bg-white/15" />
+            <div className="h-1.5 w-[62%] rounded bg-white/15" />
+          </div>
+        </div>
+        <div className="mt-2.5 rounded-lg bg-white py-1.5 text-center text-[9px] font-semibold text-ink sm:text-[10px]">
+          Post on Google →
+        </div>
+      </div>
+    </div>
   )
 }

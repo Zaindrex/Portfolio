@@ -34,7 +34,7 @@ export type About = {
 // `icon` keys map to react-icons in components/TechIcon.tsx
 export type SkillGroup = { title: string; items: { name: string; icon: string }[] }
 
-export type ProjectVisualKind = 'map' | 'rag' | 'sign' | 'street'
+export type ProjectVisualKind = 'map' | 'rag' | 'sign' | 'street' | 'review'
 
 export type Project = {
   title: string

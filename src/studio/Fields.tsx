@@ -39,7 +39,7 @@ const HINTS: Record<string, string> = {
 
 const LONG_TEXT = new Set(['tagline', 'problem', 'heading', 'text'])
 const LONG_LIST_ITEMS = new Set(['paragraphs', 'points', 'highlights'])
-const ENUMS: Record<string, string[]> = { visual: ['map', 'rag', 'sign', 'street'] }
+const ENUMS: Record<string, string[]> = { visual: ['map', 'rag', 'sign', 'street', 'review'] }
 const ASSETS = new Set(['photo', 'image', 'resume'])
 const SUMMARY_KEYS = ['title', 'name', 'label', 'org', 'period']
 

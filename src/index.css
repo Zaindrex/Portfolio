@@ -188,3 +188,14 @@
   }
   .reveal, .enter { opacity: 1; transform: none; filter: none; }
 }
+
+/* ── Feedora project illustration ─────────────────────────── */
+@keyframes scan {
+  0%, 100% { top: 8%; }
+  50% { top: 90%; }
+}
+@keyframes star-pop {
+  0%, 8% { opacity: 0.25; transform: scale(0.7); }
+  16%, 85% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.25; transform: scale(0.7); }
+}

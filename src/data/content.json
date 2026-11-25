@@ -166,6 +166,29 @@
   ],
   "projects": [
     {
+      "title": "Feedora",
+      "tagline": "QR review flow that turns real customer feedback into Google reviews.",
+      "problem": "Happy customers rarely leave reviews because writing one feels like work. Feedora puts a QR code on the table: customers rate their visit in seconds, can get an AI draft built only from their own feedback, edit it or write their own, and post it on Google themselves.",
+      "highlights": [
+        "Supabase backend with Row Level Security, five Edge Functions, and separate owner and admin portals",
+        "Server-side AI drafts (OpenRouter, Gemini or OpenAI) that match the rating, with per-visit and per-venue rate limits",
+        "No review gating: every rating gets the same path to Google, tracked in a scan-to-click analytics funnel"
+      ],
+      "stack": [
+        "React",
+        "TypeScript",
+        "Supabase",
+        "PostgreSQL",
+        "Edge Functions",
+        "Tailwind"
+      ],
+      "visual": "review",
+      "status": "New",
+      "live": "https://zaindrex.github.io/Feedora/",
+      "repo": "https://github.com/Zaindrex/Feedora",
+      "image": ""
+    },
+    {
       "title": "Neighborlly",
       "tagline": "Find skilled freelancers within 5 km of you.",
       "problem": "Local talent (tutors, electricians, designers) is hard to discover by distance. Neighborlly shows who’s nearby on a live map and lets you chat instantly.",
